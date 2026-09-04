@@ -9,6 +9,9 @@ unknown letter occurrences are revealed left-to-right first, followed by
 occurrences already established by yellow clue tiles. Typed input never affects
 which hint is selected.
 
+The completion summary omits the guess count when the player submitted exactly
+one guess; that tautological `Guesses: 1` message should not be reintroduced.
+
 ## Run locally
 
 ```sh

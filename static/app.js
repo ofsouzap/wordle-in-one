@@ -107,7 +107,8 @@ function finishGame() {
   finished = true;
   hintButton.disabled = true;
   animateWin();
-  message.textContent = `You found it! Guesses: ${guesses} · Hints: ${hints}`;
+  const guessSummary = guesses > 1 ? `Guesses: ${guesses} · ` : "";
+  message.textContent = `You found it! ${guessSummary}Hints: ${hints}`;
   message.className = "message win";
 }
 

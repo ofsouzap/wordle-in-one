@@ -39,6 +39,25 @@ Whenever a cached frontend asset changes, increment `APP_CACHE` in
 `static/app.js`. Installation is atomic: failure to fetch any shell asset leaves
 the preceding service worker and cache in place.
 
+## Benchmark puzzle generation
+
+Run a reproducible uninstrumented benchmark:
+
+```sh
+.venv/bin/python benchmark_generation.py --count 100
+```
+
+Profile the same workload and show its hottest functions:
+
+```sh
+.venv/bin/python benchmark_generation.py --count 100 \
+  --profile benchmark-results/generation.prof
+```
+
+Use `--json` to retain detailed per-seed measurements. Profiling adds overhead,
+so use an unprofiled run for latency numbers and the profiled run only to locate
+expensive functions.
+
 ## Run locally
 
 ```sh

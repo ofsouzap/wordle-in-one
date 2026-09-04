@@ -11,6 +11,7 @@ which hint is selected.
 
 The completion summary omits the guess count when the player submitted exactly
 one guess; that tautological `Guesses: 1` message should not be reintroduced.
+It says `No hints used` instead of displaying the mechanical `Hints: 0`.
 
 ## Run locally
 

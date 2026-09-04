@@ -4,14 +4,13 @@ A mobile-first puzzle game: infer the sole possible Wordle solution from one
 carefully generated first-guess result. Players can keep trying until they find
 the answer; incorrect attempts provide no additional tile feedback. Confirmed
 hints reveal and lock one correctly placed letter, and the finished game reports
-the numbers of submitted guesses and hints used. Hint order is deterministic:
+the number of hints used. Guess attempts are deliberately not counted. Hint order is deterministic:
 unknown letter occurrences are revealed left-to-right first, followed by
 occurrences already established by yellow clue tiles. Typed input never affects
 which hint is selected.
 
-The completion summary omits the guess count when the player submitted exactly
-one guess; that tautological `Guesses: 1` message should not be reintroduced.
-It says `No hints used` instead of displaying the mechanical `Hints: 0`.
+The completion summary says `No hints used` instead of displaying the
+mechanical `Hints: 0`.
 
 ## Run locally
 

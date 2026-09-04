@@ -13,7 +13,6 @@ let answer = Array(5).fill("");
 let lockedPositions = new Set();
 let hintOrder = [];
 let finished = false;
-let guesses = 0;
 let hints = 0;
 
 function tiles(container) {
@@ -107,10 +106,8 @@ function finishGame() {
   finished = true;
   hintButton.disabled = true;
   animateWin();
-  const summary = [];
-  if (guesses > 1) summary.push(`Guesses: ${guesses}`);
-  summary.push(hints === 0 ? "No hints used" : `Hints: ${hints}`);
-  message.textContent = `You found it! ${summary.join(" · ")}`;
+  const hintSummary = hints === 0 ? "No hints used" : `Hints: ${hints}`;
+  message.textContent = `You found it! ${hintSummary}`;
   message.className = "message win";
 }
 
@@ -131,7 +128,6 @@ async function loadPuzzle(seed) {
     if (!response.ok) throw new Error(body.error || "Could not load puzzle");
     puzzle = body;
     finished = false;
-    guesses = 0;
     hints = 0;
     hintButton.disabled = false;
     seedInput.value = body.seed;
@@ -153,7 +149,6 @@ function enterLetter(letter) {
       message.textContent = "Enter five letters first.";
       return;
     }
-    guesses += 1;
     const won = answer.join("") === puzzle.solution.toUpperCase();
     if (won) {
       finishGame();

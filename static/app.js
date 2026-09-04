@@ -8,7 +8,8 @@ const message = document.querySelector("#message");
 const seedInput = document.querySelector("#seed");
 
 let puzzle = null;
-let answer = "";
+let answer = Array(5).fill("");
+let lockedPositions = new Set();
 let finished = false;
 
 function tiles(container) {
@@ -48,8 +49,21 @@ function drawAnswer() {
   const row = [...answerRow.children];
   row.forEach((tile, index) => {
     tile.textContent = answer[index] || "";
-    tile.classList.toggle("filled", Boolean(answer[index]));
+    tile.classList.toggle("locked", lockedPositions.has(index));
+    tile.classList.toggle("filled", Boolean(answer[index]) && !lockedPositions.has(index));
   });
+}
+
+function resetAnswer() {
+  lockedPositions = new Set(
+    puzzle.feedback
+      .map((value, index) => value === 2 ? index : -1)
+      .filter((index) => index !== -1),
+  );
+  answer = [...puzzle.firstGuess.toUpperCase()].map((letter, index) =>
+    lockedPositions.has(index) ? letter : ""
+  );
+  drawAnswer();
 }
 
 function animateWin() {
@@ -69,12 +83,12 @@ async function loadPuzzle(seed) {
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "Could not load puzzle");
     puzzle = body;
-    answer = "";
     finished = false;
     seedInput.value = body.seed;
     drawClue();
     colorKeyboard();
     tiles(answerRow);
+    resetAnswer();
     message.textContent = "What must the solution be?";
   } catch (error) {
     message.textContent = error.message;
@@ -85,28 +99,35 @@ async function loadPuzzle(seed) {
 function enterLetter(letter) {
   if (finished || !puzzle) return;
   if (letter === "ENTER") {
-    if (answer.length !== 5) {
+    if (answer.some((value) => !value)) {
       message.textContent = "Enter five letters first.";
       return;
     }
-    const won = answer === puzzle.solution.toUpperCase();
+    const won = answer.join("") === puzzle.solution.toUpperCase();
     if (won) {
       finished = true;
       animateWin();
       message.textContent = "You found it!";
       message.className = "message win";
     } else {
-      answer = "";
-      drawAnswer();
+      resetAnswer();
       message.textContent = "Not that one—try again.";
       message.className = "message";
     }
     return;
   }
   if (letter === "⌫" || letter === "BACKSPACE") {
-    answer = answer.slice(0, -1);
-  } else if (/^[A-Z]$/.test(letter) && answer.length < 5) {
-    answer += letter;
+    for (let index = answer.length - 1; index >= 0; index -= 1) {
+      if (!lockedPositions.has(index) && answer[index]) {
+        answer[index] = "";
+        break;
+      }
+    }
+  } else if (/^[A-Z]$/.test(letter)) {
+    const index = answer.findIndex((value, position) =>
+      !value && !lockedPositions.has(position)
+    );
+    if (index !== -1) answer[index] = letter;
   }
   message.textContent = "What must the solution be?";
   drawAnswer();

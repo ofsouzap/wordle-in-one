@@ -82,6 +82,7 @@ main {
 .tile.absent { background: var(--absent); border-color: var(--absent); }
 .tile.present { background: var(--present); border-color: var(--present); }
 .tile.correct { background: var(--correct); border-color: var(--correct); }
+.tile.locked { background: var(--correct); border-color: var(--correct); }
 .tile.filled { border-color: #727274; animation: pop 90ms ease-out; }
 .tile.reveal { animation: flip 500ms ease both; }
 

@@ -21,6 +21,9 @@ the queue is empty. The **Offline cache status** dialog shows the connection,
 queue depth, current seed, last successful update, refresh activity, and queued
 seeds; it also provides a manual refresh button.
 
+New puzzle seeds are random eight-digit integers. Timestamps are used only for
+cache diagnostics, never as puzzle seeds.
+
 This is puzzle-data caching only. Loading the entire application from a closed
 state while offline requires the planned service-worker/PWA work.
 

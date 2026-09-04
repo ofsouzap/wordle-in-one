@@ -14,6 +14,8 @@ const DATABASE_NAME = "wordle-in-one";
 const DATABASE_VERSION = 1;
 const PUZZLE_STORE = "puzzles";
 const META_STORE = "metadata";
+const MINIMUM_SEED = 10_000_000;
+const SEED_RANGE = 90_000_000;
 
 let puzzle = null;
 let answer = Array(5).fill("");
@@ -24,6 +26,11 @@ let hints = 0;
 let cacheActivity = "Idle";
 let refillingCache = false;
 let databasePromise = null;
+
+function randomSeed() {
+  const randomValue = crypto.getRandomValues(new Uint32Array(1))[0];
+  return MINIMUM_SEED + Math.floor((randomValue / 2 ** 32) * SEED_RANGE);
+}
 
 function openDatabase() {
   if (databasePromise) return databasePromise;
@@ -239,7 +246,7 @@ async function loadNextPuzzle() {
     if (cachedPuzzle) {
       showPuzzle(cachedPuzzle);
     } else if (navigator.onLine) {
-      showPuzzle(await fetchPuzzle(Date.now()));
+      showPuzzle(await fetchPuzzle(randomSeed()));
     } else {
       throw new Error("No cached puzzles remain. Reconnect to refresh the queue.");
     }
@@ -260,14 +267,17 @@ async function refillPuzzleCache() {
   await updateCacheStatus();
   let added = 0;
   try {
-    let count = (await getCachedRecords()).length;
-    let nonce = 0;
+    const records = await getCachedRecords();
+    let count = records.length;
+    const queuedSeeds = new Set(records.map((record) => record.seed));
+    if (puzzle) queuedSeeds.add(puzzle.seed);
     while (count < CACHE_TARGET) {
-      const seed = Date.now() * 100 + nonce;
-      nonce += 1;
+      let seed = randomSeed();
+      while (queuedSeeds.has(seed)) seed = randomSeed();
       const cachedPuzzle = await fetchPuzzle(seed);
       await storeCachedPuzzle(cachedPuzzle);
-      count = (await getCachedRecords()).length;
+      queuedSeeds.add(seed);
+      count += 1;
       added += 1;
       await updateCacheStatus();
     }

@@ -7,6 +7,13 @@ const keyboard = document.querySelector("#keyboard");
 const message = document.querySelector("#message");
 const seedInput = document.querySelector("#seed");
 const hintButton = document.querySelector("#hint-button");
+const cacheDialog = document.querySelector("#cache-dialog");
+
+const CACHE_TARGET = 10;
+const DATABASE_NAME = "wordle-in-one";
+const DATABASE_VERSION = 1;
+const PUZZLE_STORE = "puzzles";
+const META_STORE = "metadata";
 
 let puzzle = null;
 let answer = Array(5).fill("");
@@ -14,6 +21,74 @@ let lockedPositions = new Set();
 let hintOrder = [];
 let finished = false;
 let hints = 0;
+let cacheActivity = "Idle";
+let refillingCache = false;
+let databasePromise = null;
+
+function openDatabase() {
+  if (databasePromise) return databasePromise;
+  databasePromise = new Promise((resolve, reject) => {
+    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+    request.addEventListener("upgradeneeded", () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains(PUZZLE_STORE)) {
+        database.createObjectStore(PUZZLE_STORE, { keyPath: "seed" });
+      }
+      if (!database.objectStoreNames.contains(META_STORE)) {
+        database.createObjectStore(META_STORE, { keyPath: "key" });
+      }
+    });
+    request.addEventListener("success", () => resolve(request.result));
+    request.addEventListener("error", () => reject(request.error));
+  });
+  return databasePromise;
+}
+
+function databaseRequest(storeName, mode, operation) {
+  return openDatabase().then((database) => new Promise((resolve, reject) => {
+    const transaction = database.transaction(storeName, mode);
+    const request = operation(transaction.objectStore(storeName));
+    request.addEventListener("success", () => resolve(request.result));
+    request.addEventListener("error", () => reject(request.error));
+    transaction.addEventListener("abort", () => reject(transaction.error));
+  }));
+}
+
+function getCachedRecords() {
+  return databaseRequest(PUZZLE_STORE, "readonly", (store) => store.getAll());
+}
+
+function storeCachedPuzzle(puzzleToCache) {
+  return databaseRequest(PUZZLE_STORE, "readwrite", (store) => store.put({
+    seed: puzzleToCache.seed,
+    puzzle: puzzleToCache,
+    cachedAt: new Date().toISOString(),
+  }));
+}
+
+async function takeCachedPuzzle() {
+  const records = await getCachedRecords();
+  records.sort((left, right) => left.cachedAt.localeCompare(right.cachedAt));
+  const record = records[0];
+  if (!record) return null;
+  await databaseRequest(PUZZLE_STORE, "readwrite", (store) => store.delete(record.seed));
+  return record.puzzle;
+}
+
+function getMetadata(key) {
+  return databaseRequest(META_STORE, "readonly", (store) => store.get(key));
+}
+
+function setMetadata(key, value) {
+  return databaseRequest(META_STORE, "readwrite", (store) => store.put({ key, value }));
+}
+
+async function fetchPuzzle(seed) {
+  const response = await fetch(`/api/puzzle?seed=${encodeURIComponent(seed)}`);
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.error || "Could not load puzzle");
+  return body;
+}
 
 function tiles(container) {
   container.replaceChildren();
@@ -117,29 +192,118 @@ function shakeAnswer() {
   answerRow.classList.add("shake");
 }
 
-async function loadPuzzle(seed) {
+function beginLoading() {
   finished = true;
   hintButton.disabled = true;
   message.className = "message";
   message.textContent = "Generating puzzle…";
+}
+
+function showPuzzle(puzzleToShow) {
+  puzzle = puzzleToShow;
+  finished = false;
+  hints = 0;
+  hintButton.disabled = false;
+  seedInput.value = puzzle.seed;
+  drawClue();
+  colorKeyboard();
+  tiles(answerRow);
+  resetAnswer();
+  message.textContent = "What must the solution be?";
+  message.className = "message";
+}
+
+function showLoadError(error) {
+  message.textContent = error.message;
+  message.className = "message lose";
+}
+
+async function loadPuzzle(seed) {
+  beginLoading();
   try {
-    const response = await fetch(`/api/puzzle?seed=${encodeURIComponent(seed)}`);
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.error || "Could not load puzzle");
-    puzzle = body;
-    finished = false;
-    hints = 0;
-    hintButton.disabled = false;
-    seedInput.value = body.seed;
-    drawClue();
-    colorKeyboard();
-    tiles(answerRow);
-    resetAnswer();
-    message.textContent = "What must the solution be?";
+    showPuzzle(await fetchPuzzle(seed));
   } catch (error) {
-    message.textContent = error.message;
-    message.classList.add("lose");
+    showLoadError(error);
   }
+}
+
+async function loadNextPuzzle() {
+  beginLoading();
+  try {
+    let cachedPuzzle = null;
+    try {
+      cachedPuzzle = await takeCachedPuzzle();
+    } catch (error) {
+      cacheActivity = `Cache unavailable: ${error.message}`;
+    }
+    if (cachedPuzzle) {
+      showPuzzle(cachedPuzzle);
+    } else if (navigator.onLine) {
+      showPuzzle(await fetchPuzzle(Date.now()));
+    } else {
+      throw new Error("No cached puzzles remain. Reconnect to refresh the queue.");
+    }
+  } catch (error) {
+    showLoadError(error);
+  }
+  void refillPuzzleCache();
+}
+
+async function refillPuzzleCache() {
+  if (refillingCache || !navigator.onLine) {
+    await updateCacheStatus();
+    return;
+  }
+
+  refillingCache = true;
+  cacheActivity = "Refreshing…";
+  await updateCacheStatus();
+  let added = 0;
+  try {
+    let count = (await getCachedRecords()).length;
+    let nonce = 0;
+    while (count < CACHE_TARGET) {
+      const seed = Date.now() * 100 + nonce;
+      nonce += 1;
+      const cachedPuzzle = await fetchPuzzle(seed);
+      await storeCachedPuzzle(cachedPuzzle);
+      count = (await getCachedRecords()).length;
+      added += 1;
+      await updateCacheStatus();
+    }
+    if (added > 0) await setMetadata("lastUpdated", new Date().toISOString());
+    cacheActivity = added > 0 ? `Added ${added} puzzle${added === 1 ? "" : "s"}` : "Cache full";
+  } catch (error) {
+    cacheActivity = `Refresh failed: ${error.message}`;
+  } finally {
+    refillingCache = false;
+    await updateCacheStatus();
+  }
+}
+
+async function updateCacheStatus() {
+  try {
+    const [records, lastUpdated] = await Promise.all([
+      getCachedRecords(),
+      getMetadata("lastUpdated"),
+    ]);
+    records.sort((left, right) => left.cachedAt.localeCompare(right.cachedAt));
+    document.querySelector("#cache-count").textContent = `${records.length} puzzles`;
+    document.querySelector("#cache-target").textContent = `${CACHE_TARGET} puzzles`;
+    document.querySelector("#cache-updated").textContent = lastUpdated
+      ? new Date(lastUpdated.value).toLocaleString()
+      : "Never";
+    document.querySelector("#cache-seeds").textContent = records.length
+      ? records.map((record) => record.seed).join(", ")
+      : "None";
+  } catch (error) {
+    document.querySelector("#cache-count").textContent = "Unavailable";
+    document.querySelector("#cache-updated").textContent = "Unavailable";
+    document.querySelector("#cache-seeds").textContent = error.message;
+  }
+  document.querySelector("#cache-connection").textContent = navigator.onLine ? "Online" : "Offline";
+  document.querySelector("#cache-current").textContent = puzzle ? `Seed ${puzzle.seed}` : "None";
+  document.querySelector("#cache-activity").textContent = cacheActivity;
 }
 
 function enterLetter(letter) {
@@ -221,11 +385,27 @@ document.addEventListener("keydown", (event) => {
 
 document.querySelector("#load-seed").addEventListener("click", () => loadPuzzle(seedInput.value));
 document.querySelector("#new-game").addEventListener("click", () => {
-  loadPuzzle(Date.now());
+  void loadNextPuzzle();
 });
 hintButton.addEventListener("click", revealHint);
 document.querySelector("#info-button").addEventListener("click", () => document.querySelector("#info-dialog").showModal());
 document.querySelector("#close-info").addEventListener("click", () => document.querySelector("#info-dialog").close());
+document.querySelector("#cache-status-button").addEventListener("click", async () => {
+  await updateCacheStatus();
+  cacheDialog.showModal();
+});
+document.querySelector("#close-cache").addEventListener("click", () => cacheDialog.close());
+document.querySelector("#refresh-cache").addEventListener("click", () => {
+  void refillPuzzleCache();
+});
+window.addEventListener("online", () => {
+  cacheActivity = "Connection restored";
+  void refillPuzzleCache();
+});
+window.addEventListener("offline", () => {
+  cacheActivity = "Offline; using cached puzzles";
+  void updateCacheStatus();
+});
 
 buildKeyboard();
-loadPuzzle(Date.now());
+void loadNextPuzzle();

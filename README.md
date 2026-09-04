@@ -12,6 +12,18 @@ which hint is selected.
 The completion summary says `No hints used` instead of displaying the
 mechanical `Hints: 0`.
 
+## Offline puzzle queue
+
+The browser keeps ten generated puzzles in IndexedDB. A new game consumes the
+oldest cached puzzle and refills the queue in the background while online. If
+the connection drops while the page is open, new games continue to work until
+the queue is empty. The **Offline cache status** dialog shows the connection,
+queue depth, current seed, last successful update, refresh activity, and queued
+seeds; it also provides a manual refresh button.
+
+This is puzzle-data caching only. Loading the entire application from a closed
+state while offline requires the planned service-worker/PWA work.
+
 ## Run locally
 
 ```sh

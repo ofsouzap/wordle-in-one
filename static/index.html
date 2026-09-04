@@ -32,6 +32,7 @@
           <button id="load-seed">Load</button>
           <button id="new-game" class="primary">New puzzle</button>
         </div>
+        <button id="cache-status-button" class="cache-status-button">Offline cache status</button>
       </section>
     </main>
 
@@ -40,6 +41,24 @@
       <h2>How to play</h2>
       <p>You see the result of somebody’s first Wordle guess. The clue is specially chosen: among every accepted Wordle word, only one solution fits.</p>
       <p>Keep guessing until you find it. Wrong answers do not reveal any extra tiles.</p>
+    </dialog>
+
+    <dialog id="cache-dialog">
+      <button id="close-cache" class="dialog-close" aria-label="Close">×</button>
+      <h2>Offline puzzle cache</h2>
+      <dl class="cache-details">
+        <div><dt>Connection</dt><dd id="cache-connection">Checking…</dd></div>
+        <div><dt>Ready to play</dt><dd id="cache-count">Checking…</dd></div>
+        <div><dt>Cache target</dt><dd id="cache-target">10 puzzles</dd></div>
+        <div><dt>Last updated</dt><dd id="cache-updated">Never</dd></div>
+        <div><dt>Current puzzle</dt><dd id="cache-current">None</dd></div>
+        <div><dt>Activity</dt><dd id="cache-activity">Idle</dd></div>
+      </dl>
+      <div class="cached-seeds">
+        <h3>Queued seeds</h3>
+        <code id="cache-seeds">None</code>
+      </div>
+      <button id="refresh-cache" class="dialog-action">Refresh cache</button>
     </dialog>
 
     <script src="app.js" defer></script>

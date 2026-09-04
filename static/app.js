@@ -10,7 +10,6 @@ const seedInput = document.querySelector("#seed");
 let puzzle = null;
 let answer = "";
 let finished = false;
-let guesses = 0;
 
 function tiles(container) {
   container.replaceChildren();
@@ -28,6 +27,20 @@ function drawClue() {
     row[index].textContent = letter;
     row[index].classList.add(feedbackClasses[puzzle.feedback[index]], "reveal");
     row[index].style.animationDelay = `${index * 90}ms`;
+  });
+}
+
+function colorKeyboard() {
+  const bestFeedback = new Map();
+  [...puzzle.firstGuess].forEach((letter, index) => {
+    const value = puzzle.feedback[index];
+    bestFeedback.set(letter, Math.max(bestFeedback.get(letter) ?? -1, value));
+  });
+
+  keyboard.querySelectorAll(".key[data-letter]").forEach((key) => {
+    key.classList.remove(...feedbackClasses);
+    const value = bestFeedback.get(key.dataset.letter.toLowerCase());
+    if (value !== undefined) key.classList.add(feedbackClasses[value]);
   });
 }
 
@@ -57,10 +70,10 @@ async function loadPuzzle(seed) {
     if (!response.ok) throw new Error(body.error || "Could not load puzzle");
     puzzle = body;
     answer = "";
-    guesses = 0;
     finished = false;
     seedInput.value = body.seed;
     drawClue();
+    colorKeyboard();
     tiles(answerRow);
     message.textContent = "What must the solution be?";
   } catch (error) {
@@ -76,14 +89,11 @@ function enterLetter(letter) {
       message.textContent = "Enter five letters first.";
       return;
     }
-    guesses += 1;
     const won = answer === puzzle.solution.toUpperCase();
     if (won) {
       finished = true;
       animateWin();
-      message.textContent = guesses === 1
-        ? "Exactly! You found it on your first guess."
-        : `Exactly! You found it after ${guesses} guesses.`;
+      message.textContent = "Congratulations! You found the only possible word.";
       message.className = "message win";
     } else {
       answer = "";
@@ -110,6 +120,7 @@ function buildKeyboard() {
       const key = document.createElement("button");
       key.className = `key ${letter.length > 1 ? "wide" : ""}`;
       key.textContent = letter;
+      if (letter.length === 1) key.dataset.letter = letter;
       key.addEventListener("click", () => enterLetter(letter));
       row.append(key);
     });

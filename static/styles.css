@@ -164,6 +164,7 @@ dialog::backdrop { background: rgb(0 0 0 / .72); }
 .cached-seeds h3 { margin-bottom: 6px; font-size: .8rem; color: var(--muted); text-transform: uppercase; }
 .cached-seeds code { display: block; max-height: 88px; overflow: auto; overflow-wrap: anywhere; font-size: .72rem; color: #d8d8d8; }
 .dialog-action { width: 100%; min-height: 44px; margin-top: 20px; border: 0; border-radius: 6px; background: var(--correct); color: white; font-weight: 750; }
+.dialog-action.danger { margin-top: 9px; background: #9f3434; }
 
 @keyframes pop { from { transform: scale(.88); } to { transform: scale(1); } }
 @keyframes flip { 0% { transform: rotateX(0); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }

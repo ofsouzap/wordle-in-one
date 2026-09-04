@@ -25,6 +25,7 @@ let finished = false;
 let hints = 0;
 let cacheActivity = "Idle";
 let refillingCache = false;
+let refillGeneration = 0;
 let databasePromise = null;
 
 function randomSeed() {
@@ -71,6 +72,10 @@ function storeCachedPuzzle(puzzleToCache) {
     puzzle: puzzleToCache,
     cachedAt: new Date().toISOString(),
   }));
+}
+
+function clearStore(storeName) {
+  return databaseRequest(storeName, "readwrite", (store) => store.clear());
 }
 
 async function takeCachedPuzzle() {
@@ -263,6 +268,7 @@ async function refillPuzzleCache() {
   }
 
   refillingCache = true;
+  const generation = refillGeneration;
   cacheActivity = "Refreshing…";
   await updateCacheStatus();
   let added = 0;
@@ -275,6 +281,7 @@ async function refillPuzzleCache() {
       let seed = randomSeed();
       while (queuedSeeds.has(seed)) seed = randomSeed();
       const cachedPuzzle = await fetchPuzzle(seed);
+      if (generation !== refillGeneration) return;
       await storeCachedPuzzle(cachedPuzzle);
       queuedSeeds.add(seed);
       count += 1;
@@ -289,6 +296,21 @@ async function refillPuzzleCache() {
     refillingCache = false;
     await updateCacheStatus();
   }
+}
+
+async function clearPuzzleCache() {
+  if (!window.confirm("Clear every cached puzzle? Your current game will remain open.")) return;
+
+  refillGeneration += 1;
+  cacheActivity = "Clearing…";
+  await updateCacheStatus();
+  try {
+    await Promise.all([clearStore(PUZZLE_STORE), clearStore(META_STORE)]);
+    cacheActivity = "Cache cleared";
+  } catch (error) {
+    cacheActivity = `Clear failed: ${error.message}`;
+  }
+  await updateCacheStatus();
 }
 
 async function updateCacheStatus() {
@@ -407,6 +429,9 @@ document.querySelector("#cache-status-button").addEventListener("click", async (
 document.querySelector("#close-cache").addEventListener("click", () => cacheDialog.close());
 document.querySelector("#refresh-cache").addEventListener("click", () => {
   void refillPuzzleCache();
+});
+document.querySelector("#clear-cache").addEventListener("click", () => {
+  void clearPuzzleCache();
 });
 window.addEventListener("online", () => {
   cacheActivity = "Connection restored";

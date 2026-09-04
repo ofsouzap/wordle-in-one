@@ -20,6 +20,8 @@ the connection drops while the page is open, new games continue to work until
 the queue is empty. The **Offline cache status** dialog shows the connection,
 queue depth, current seed, last successful update, refresh activity, and queued
 seeds; it also provides a manual refresh button.
+The dialog also offers a confirmed cache-clear action. Clearing cancels any
+active refill and leaves the current puzzle untouched.
 
 New puzzle seeds are random eight-digit integers. Timestamps are used only for
 cache diagnostics, never as puzzle seeds.

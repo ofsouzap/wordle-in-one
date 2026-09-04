@@ -26,8 +26,18 @@ active refill and leaves the current puzzle untouched.
 New puzzle seeds are random eight-digit integers. Timestamps are used only for
 cache diagnostics, never as puzzle seeds.
 
-This is puzzle-data caching only. Loading the entire application from a closed
-state while offline requires the planned service-worker/PWA work.
+## Progressive Web App
+
+The app is installable and supports offline startup. `manifest.webmanifest`
+defines its installed appearance and icons. The versioned service worker
+precaches the complete application shell while leaving API puzzle responses to
+the IndexedDB queue. The cache-status dialog reports service-worker, app-shell,
+and display-mode state.
+
+Whenever a cached frontend asset changes, increment `APP_CACHE` in
+`static/service-worker.js` and the matching `APP_SHELL_CACHE` in
+`static/app.js`. Installation is atomic: failure to fetch any shell asset leaves
+the preceding service worker and cache in place.
 
 ## Run locally
 

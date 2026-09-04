@@ -96,6 +96,14 @@ def index():
     return send_from_directory(STATIC_DIR, "index.html")
 
 
+@app.get("/service-worker.js")
+def service_worker():
+    response = send_from_directory(STATIC_DIR, "service-worker.js")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Service-Worker-Allowed"] = "/"
+    return response
+
+
 @app.get("/api/puzzle")
 def puzzle():
     values = request.args.getlist("seed")

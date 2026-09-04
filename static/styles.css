@@ -150,6 +150,16 @@ main {
   color: var(--muted);
   font-weight: 650;
 }
+.install-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  border: 1px solid var(--correct);
+  border-radius: 6px;
+  background: transparent;
+  color: #82c47d;
+  font-weight: 750;
+}
 
 .tile.win-flip { animation: win-flip 600ms ease both; }
 .tile-row.shake { animation: shake 420ms ease-in-out; }

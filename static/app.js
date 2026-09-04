@@ -8,8 +8,10 @@ const message = document.querySelector("#message");
 const seedInput = document.querySelector("#seed");
 const hintButton = document.querySelector("#hint-button");
 const cacheDialog = document.querySelector("#cache-dialog");
+const installButton = document.querySelector("#install-app");
 
 const CACHE_TARGET = 10;
+const APP_SHELL_CACHE = "wordle-in-one-app-v1";
 const DATABASE_NAME = "wordle-in-one";
 const DATABASE_VERSION = 1;
 const PUZZLE_STORE = "puzzles";
@@ -27,6 +29,8 @@ let cacheActivity = "Idle";
 let refillingCache = false;
 let refillGeneration = 0;
 let databasePromise = null;
+let deferredInstallPrompt = null;
+let serviceWorkerStatus = "Not registered";
 
 function randomSeed() {
   const randomValue = crypto.getRandomValues(new Uint32Array(1))[0];
@@ -336,6 +340,46 @@ async function updateCacheStatus() {
   document.querySelector("#cache-connection").textContent = navigator.onLine ? "Online" : "Offline";
   document.querySelector("#cache-current").textContent = puzzle ? `Seed ${puzzle.seed}` : "None";
   document.querySelector("#cache-activity").textContent = cacheActivity;
+  await updatePwaStatus();
+}
+
+function isStandalone() {
+  return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+}
+
+async function updatePwaStatus() {
+  document.querySelector("#pwa-worker").textContent = serviceWorkerStatus;
+  document.querySelector("#pwa-display").textContent = isStandalone() ? "Installed app" : "Browser";
+  try {
+    document.querySelector("#pwa-shell").textContent = await caches.has(APP_SHELL_CACHE)
+      ? "Cached for offline use"
+      : "Not cached yet";
+  } catch (error) {
+    document.querySelector("#pwa-shell").textContent = `Unavailable: ${error.message}`;
+  }
+}
+
+async function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) {
+    serviceWorkerStatus = "Not supported";
+    await updatePwaStatus();
+    return;
+  }
+
+  serviceWorkerStatus = "Installing…";
+  await updatePwaStatus();
+  try {
+    const registration = await navigator.serviceWorker.register("/service-worker.js");
+    await navigator.serviceWorker.ready;
+    serviceWorkerStatus = registration.active ? "Active" : "Installed";
+    registration.addEventListener("updatefound", () => {
+      serviceWorkerStatus = "Updating…";
+      void updatePwaStatus();
+    });
+  } catch (error) {
+    serviceWorkerStatus = `Failed: ${error.message}`;
+  }
+  await updatePwaStatus();
 }
 
 function enterLetter(letter) {
@@ -433,6 +477,29 @@ document.querySelector("#refresh-cache").addEventListener("click", () => {
 document.querySelector("#clear-cache").addEventListener("click", () => {
   void clearPuzzleCache();
 });
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  installButton.hidden = false;
+});
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  installButton.hidden = true;
+  void updatePwaStatus();
+});
+installButton.addEventListener("click", async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  installButton.hidden = true;
+});
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    serviceWorkerStatus = "Active";
+    void updatePwaStatus();
+  });
+}
 window.addEventListener("online", () => {
   cacheActivity = "Connection restored";
   void refillPuzzleCache();
@@ -444,3 +511,4 @@ window.addEventListener("offline", () => {
 
 buildKeyboard();
 void loadNextPuzzle();
+void registerServiceWorker();

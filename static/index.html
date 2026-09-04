@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#121213">
+    <title>Wordle in One</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header>
+      <div class="eyebrow">One clue. One answer.</div>
+      <h1>WORDLE <span>IN ONE</span></h1>
+      <button id="info-button" class="icon-button" aria-label="How to play">?</button>
+    </header>
+
+    <main>
+      <section id="game" aria-live="polite">
+        <p class="instruction">This first guess leaves exactly one possible word.</p>
+        <div id="clue-row" class="tile-row" aria-label="First guess"></div>
+        <div id="answer-row" class="tile-row" aria-label="Your answer"></div>
+        <p id="message" class="message">What must the solution be?</p>
+      </section>
+
+      <div id="keyboard" class="keyboard" aria-label="On-screen keyboard"></div>
+
+      <section class="controls">
+        <label for="seed">Puzzle seed</label>
+        <div class="seed-controls">
+          <input id="seed" type="number" inputmode="numeric" value="0">
+          <button id="load-seed">Load</button>
+          <button id="new-game" class="primary">New puzzle</button>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="info-dialog">
+      <button id="close-info" class="dialog-close" aria-label="Close">×</button>
+      <h2>How to play</h2>
+      <p>You see the result of somebody’s first Wordle guess. The clue is specially chosen: among every accepted Wordle word, only one solution fits.</p>
+      <p>Keep guessing until you find it. Wrong answers do not reveal any extra tiles.</p>
+    </dialog>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

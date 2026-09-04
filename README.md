@@ -1,0 +1,30 @@
+# Wordle in One
+
+A mobile-first puzzle game: infer the sole possible Wordle solution from one
+carefully generated first-guess result. Players can keep trying until they find
+the answer; incorrect attempts provide no additional tile feedback.
+
+## Run locally
+
+```sh
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python server.py
+```
+
+Then open <http://127.0.0.1:8000>. The only API endpoint is:
+
+```text
+GET /api/puzzle?seed=0
+```
+
+The integer seed makes generation reproducible. The endpoint returns the first
+guess, its feedback (`0` gray, `1` yellow, `2` green), the solution, and the
+number of random pairs examined.
+
+The original 2,315-solution list is from cfreshman's archived extraction of
+the original Wordle source:
+<https://gist.github.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b>
+
+The 14,855 accepted guesses and its license were copied from the existing
+OpenClaw workspace resource `resources/wordle-list`.

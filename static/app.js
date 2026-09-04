@@ -93,7 +93,7 @@ function enterLetter(letter) {
     if (won) {
       finished = true;
       animateWin();
-      message.textContent = "Congratulations! You found the only possible word.";
+      message.textContent = "You found it!";
       message.className = "message win";
     } else {
       answer = "";
@@ -144,4 +144,4 @@ document.querySelector("#info-button").addEventListener("click", () => document.
 document.querySelector("#close-info").addEventListener("click", () => document.querySelector("#info-dialog").close());
 
 buildKeyboard();
-loadPuzzle(seedInput.value);
+loadPuzzle(Date.now());

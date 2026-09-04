@@ -90,6 +90,18 @@ main {
 .message.win { color: #82c47d; }
 .message.lose { color: #e2c75b; }
 
+.hint-button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid #7c713b;
+  border-radius: 999px;
+  background: transparent;
+  color: #e2c75b;
+  font-weight: 700;
+  cursor: pointer;
+}
+.hint-button:disabled { opacity: .4; cursor: default; }
+
 .keyboard { margin-top: auto; padding-top: 12px; }
 .keyboard-row { display: flex; justify-content: center; gap: 5px; margin: 7px 0; }
 

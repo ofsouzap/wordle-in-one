@@ -6,11 +6,14 @@ const answerRow = document.querySelector("#answer-row");
 const keyboard = document.querySelector("#keyboard");
 const message = document.querySelector("#message");
 const seedInput = document.querySelector("#seed");
+const hintButton = document.querySelector("#hint-button");
 
 let puzzle = null;
 let answer = Array(5).fill("");
 let lockedPositions = new Set();
 let finished = false;
+let guesses = 0;
+let hints = 0;
 
 function tiles(container) {
   container.replaceChildren();
@@ -75,6 +78,14 @@ function animateWin() {
   });
 }
 
+function finishGame() {
+  finished = true;
+  hintButton.disabled = true;
+  animateWin();
+  message.textContent = `You found it! Guesses: ${guesses} · Hints: ${hints}`;
+  message.className = "message win";
+}
+
 function shakeAnswer() {
   answerRow.classList.remove("shake");
   void answerRow.offsetWidth;
@@ -83,6 +94,7 @@ function shakeAnswer() {
 
 async function loadPuzzle(seed) {
   finished = true;
+  hintButton.disabled = true;
   message.className = "message";
   message.textContent = "Generating puzzle…";
   try {
@@ -91,6 +103,9 @@ async function loadPuzzle(seed) {
     if (!response.ok) throw new Error(body.error || "Could not load puzzle");
     puzzle = body;
     finished = false;
+    guesses = 0;
+    hints = 0;
+    hintButton.disabled = false;
     seedInput.value = body.seed;
     drawClue();
     colorKeyboard();
@@ -110,12 +125,10 @@ function enterLetter(letter) {
       message.textContent = "Enter five letters first.";
       return;
     }
+    guesses += 1;
     const won = answer.join("") === puzzle.solution.toUpperCase();
     if (won) {
-      finished = true;
-      animateWin();
-      message.textContent = "You found it!";
-      message.className = "message win";
+      finishGame();
     } else {
       shakeAnswer();
       message.textContent = "Not that one—try again.";
@@ -138,6 +151,29 @@ function enterLetter(letter) {
   }
   message.textContent = "What must the solution be?";
   drawAnswer();
+}
+
+function revealHint() {
+  if (finished || !puzzle) return;
+  if (!window.confirm("Reveal one correctly placed letter?")) return;
+
+  const hiddenPositions = [0, 1, 2, 3, 4].filter(
+    (index) => !lockedPositions.has(index),
+  );
+  if (!hiddenPositions.length) return;
+
+  const position = hiddenPositions[Math.floor(Math.random() * hiddenPositions.length)];
+  answer[position] = puzzle.solution[position].toUpperCase();
+  lockedPositions.add(position);
+  hints += 1;
+  drawAnswer();
+
+  if (lockedPositions.size === 5) {
+    finishGame();
+  } else {
+    message.textContent = "A correctly placed letter has been revealed.";
+    message.className = "message";
+  }
 }
 
 function buildKeyboard() {
@@ -168,6 +204,7 @@ document.querySelector("#load-seed").addEventListener("click", () => loadPuzzle(
 document.querySelector("#new-game").addEventListener("click", () => {
   loadPuzzle(Date.now());
 });
+hintButton.addEventListener("click", revealHint);
 document.querySelector("#info-button").addEventListener("click", () => document.querySelector("#info-dialog").showModal());
 document.querySelector("#close-info").addEventListener("click", () => document.querySelector("#info-dialog").close());
 

@@ -2,7 +2,9 @@
 
 A mobile-first puzzle game: infer the sole possible Wordle solution from one
 carefully generated first-guess result. Players can keep trying until they find
-the answer; incorrect attempts provide no additional tile feedback.
+the answer; incorrect attempts provide no additional tile feedback. Confirmed
+hints reveal and lock one correctly placed letter, and the finished game reports
+the numbers of submitted guesses and hints used.
 
 ## Run locally
 

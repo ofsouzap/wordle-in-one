@@ -55,6 +55,7 @@ function drawAnswer() {
 }
 
 function resetAnswer() {
+  answerRow.classList.remove("shake");
   lockedPositions = new Set(
     puzzle.feedback
       .map((value, index) => value === 2 ? index : -1)
@@ -72,6 +73,12 @@ function animateWin() {
     tile.classList.add("win-flip");
     tile.style.animationDelay = `${index * 120}ms`;
   });
+}
+
+function shakeAnswer() {
+  answerRow.classList.remove("shake");
+  void answerRow.offsetWidth;
+  answerRow.classList.add("shake");
 }
 
 async function loadPuzzle(seed) {
@@ -110,7 +117,7 @@ function enterLetter(letter) {
       message.textContent = "You found it!";
       message.className = "message win";
     } else {
-      resetAnswer();
+      shakeAnswer();
       message.textContent = "Not that one—try again.";
       message.className = "message";
     }

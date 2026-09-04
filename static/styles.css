@@ -131,6 +131,7 @@ main {
 .seed-controls button.primary { background: var(--correct); border-color: var(--correct); }
 
 .tile.win-flip { animation: win-flip 600ms ease both; }
+.tile-row.shake { animation: shake 420ms ease-in-out; }
 
 dialog { width: min(calc(100% - 32px), 430px); border: 1px solid var(--border); border-radius: 12px; background: #202022; color: var(--text); line-height: 1.5; }
 dialog::backdrop { background: rgb(0 0 0 / .72); }
@@ -143,6 +144,11 @@ dialog::backdrop { background: rgb(0 0 0 / .72); }
   49% { transform: rotateX(90deg); background: transparent; border-color: #727274; }
   50% { transform: rotateX(90deg); background: var(--correct); border-color: var(--correct); }
   100% { transform: rotateX(0); background: var(--correct); border-color: var(--correct); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15%, 45%, 75% { transform: translateX(-7px); }
+  30%, 60%, 90% { transform: translateX(7px); }
 }
 
 @media (min-width: 560px) { main { padding-top: 34px; } }

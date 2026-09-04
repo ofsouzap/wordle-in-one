@@ -1,4 +1,4 @@
-const APP_CACHE = "wordle-in-one-app-v1";
+const APP_CACHE = "wordle-in-one-app-v2";
 const APP_SHELL = [
   "/",
   "/styles.css",

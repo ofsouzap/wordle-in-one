@@ -14,7 +14,7 @@ mechanical `Hints: 0`.
 
 ## Offline puzzle queue
 
-The browser keeps ten generated puzzles in IndexedDB. A new game consumes the
+The browser keeps fifty generated puzzles in IndexedDB. A new game consumes the
 oldest cached puzzle and refills the queue in the background while online. If
 the connection drops while the page is open, new games continue to work until
 the queue is empty. The **Offline cache status** dialog shows the connection,

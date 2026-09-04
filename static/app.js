@@ -10,8 +10,8 @@ const hintButton = document.querySelector("#hint-button");
 const cacheDialog = document.querySelector("#cache-dialog");
 const installButton = document.querySelector("#install-app");
 
-const CACHE_TARGET = 10;
-const APP_SHELL_CACHE = "wordle-in-one-app-v1";
+const CACHE_TARGET = 50;
+const APP_SHELL_CACHE = "wordle-in-one-app-v2";
 const DATABASE_NAME = "wordle-in-one";
 const DATABASE_VERSION = 1;
 const PUZZLE_STORE = "puzzles";

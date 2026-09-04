@@ -11,6 +11,7 @@ const hintButton = document.querySelector("#hint-button");
 let puzzle = null;
 let answer = Array(5).fill("");
 let lockedPositions = new Set();
+let hintOrder = [];
 let finished = false;
 let guesses = 0;
 let hints = 0;
@@ -67,7 +68,31 @@ function resetAnswer() {
   answer = [...puzzle.firstGuess.toUpperCase()].map((letter, index) =>
     lockedPositions.has(index) ? letter : ""
   );
+  hintOrder = buildHintOrder();
   drawAnswer();
+}
+
+function buildHintOrder() {
+  const yellowCounts = new Map();
+  [...puzzle.firstGuess].forEach((letter, index) => {
+    if (puzzle.feedback[index] === 1) {
+      yellowCounts.set(letter, (yellowCounts.get(letter) ?? 0) + 1);
+    }
+  });
+
+  const unknownPositions = [];
+  const yellowPositions = [];
+  [...puzzle.solution].forEach((letter, index) => {
+    if (lockedPositions.has(index)) return;
+    const remaining = yellowCounts.get(letter) ?? 0;
+    if (remaining > 0) {
+      yellowPositions.push(index);
+      yellowCounts.set(letter, remaining - 1);
+    } else {
+      unknownPositions.push(index);
+    }
+  });
+  return [...unknownPositions, ...yellowPositions];
 }
 
 function animateWin() {
@@ -157,12 +182,8 @@ function revealHint() {
   if (finished || !puzzle) return;
   if (!window.confirm("Reveal one correctly placed letter?")) return;
 
-  const hiddenPositions = [0, 1, 2, 3, 4].filter(
-    (index) => !lockedPositions.has(index),
-  );
-  if (!hiddenPositions.length) return;
-
-  const position = hiddenPositions[Math.floor(Math.random() * hiddenPositions.length)];
+  const position = hintOrder.find((index) => !lockedPositions.has(index));
+  if (position === undefined) return;
   answer[position] = puzzle.solution[position].toUpperCase();
   lockedPositions.add(position);
   hints += 1;

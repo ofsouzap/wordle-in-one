@@ -4,7 +4,10 @@ A mobile-first puzzle game: infer the sole possible Wordle solution from one
 carefully generated first-guess result. Players can keep trying until they find
 the answer; incorrect attempts provide no additional tile feedback. Confirmed
 hints reveal and lock one correctly placed letter, and the finished game reports
-the numbers of submitted guesses and hints used.
+the numbers of submitted guesses and hints used. Hint order is deterministic:
+unknown letter occurrences are revealed left-to-right first, followed by
+occurrences already established by yellow clue tiles. Typed input never affects
+which hint is selected.
 
 ## Run locally
 

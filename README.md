@@ -61,9 +61,8 @@ expensive functions.
 ## Run locally
 
 ```sh
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/python server.py
+uv sync
+uv run python server.py
 ```
 
 Then open <http://127.0.0.1:8000>. The only API endpoint is:

@@ -23,4 +23,5 @@ COPY static ./static
 
 EXPOSE 8000
 
-CMD ["uv", "run", "gunicorn", "--bind", "0.0.0.0:8000", "server:app"]
+# IPv6 wildcard is dual-stack on Linux, so this accepts IPv4 and IPv6.
+CMD ["uv", "run", "gunicorn", "--bind", "[::]:8000", "server:app"]

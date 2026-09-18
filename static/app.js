@@ -7,15 +7,8 @@ const keyboard = document.querySelector("#keyboard");
 const message = document.querySelector("#message");
 const seedInput = document.querySelector("#seed");
 const hintButton = document.querySelector("#hint-button");
-const cacheDialog = document.querySelector("#cache-dialog");
 const installButton = document.querySelector("#install-app");
 
-const CACHE_TARGET = 50;
-const APP_SHELL_CACHE = "wordle-in-one-app-3";
-const DATABASE_NAME = "wordle-in-one";
-const DATABASE_VERSION = 1;
-const PUZZLE_STORE = "puzzles";
-const META_STORE = "metadata";
 const MINIMUM_SEED = 10_000_000;
 const SEED_RANGE = 90_000_000;
 
@@ -25,78 +18,11 @@ let lockedPositions = new Set();
 let hintOrder = [];
 let finished = false;
 let hints = 0;
-let cacheActivity = "Idle";
-let refillingCache = false;
-let refillGeneration = 0;
-let databasePromise = null;
 let deferredInstallPrompt = null;
-let serviceWorkerStatus = "Not registered";
 
 function randomSeed() {
   const randomValue = crypto.getRandomValues(new Uint32Array(1))[0];
   return MINIMUM_SEED + Math.floor((randomValue / 2 ** 32) * SEED_RANGE);
-}
-
-function openDatabase() {
-  if (databasePromise) return databasePromise;
-  databasePromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-    request.addEventListener("upgradeneeded", () => {
-      const database = request.result;
-      if (!database.objectStoreNames.contains(PUZZLE_STORE)) {
-        database.createObjectStore(PUZZLE_STORE, { keyPath: "seed" });
-      }
-      if (!database.objectStoreNames.contains(META_STORE)) {
-        database.createObjectStore(META_STORE, { keyPath: "key" });
-      }
-    });
-    request.addEventListener("success", () => resolve(request.result));
-    request.addEventListener("error", () => reject(request.error));
-  });
-  return databasePromise;
-}
-
-function databaseRequest(storeName, mode, operation) {
-  return openDatabase().then((database) => new Promise((resolve, reject) => {
-    const transaction = database.transaction(storeName, mode);
-    const request = operation(transaction.objectStore(storeName));
-    request.addEventListener("success", () => resolve(request.result));
-    request.addEventListener("error", () => reject(request.error));
-    transaction.addEventListener("abort", () => reject(transaction.error));
-  }));
-}
-
-function getCachedRecords() {
-  return databaseRequest(PUZZLE_STORE, "readonly", (store) => store.getAll());
-}
-
-function storeCachedPuzzle(puzzleToCache) {
-  return databaseRequest(PUZZLE_STORE, "readwrite", (store) => store.put({
-    seed: puzzleToCache.seed,
-    puzzle: puzzleToCache,
-    cachedAt: new Date().toISOString(),
-  }));
-}
-
-function clearStore(storeName) {
-  return databaseRequest(storeName, "readwrite", (store) => store.clear());
-}
-
-async function takeCachedPuzzle() {
-  const records = await getCachedRecords();
-  records.sort((left, right) => left.cachedAt.localeCompare(right.cachedAt));
-  const record = records[0];
-  if (!record) return null;
-  await databaseRequest(PUZZLE_STORE, "readwrite", (store) => store.delete(record.seed));
-  return record.puzzle;
-}
-
-function getMetadata(key) {
-  return databaseRequest(META_STORE, "readonly", (store) => store.get(key));
-}
-
-function setMetadata(key, value) {
-  return databaseRequest(META_STORE, "readwrite", (store) => store.put({ key, value }));
 }
 
 async function fetchPuzzle(seed) {
@@ -246,140 +172,14 @@ async function loadPuzzle(seed) {
 async function loadNextPuzzle() {
   beginLoading();
   try {
-    let cachedPuzzle = null;
-    try {
-      cachedPuzzle = await takeCachedPuzzle();
-    } catch (error) {
-      cacheActivity = `Cache unavailable: ${error.message}`;
-    }
-    if (cachedPuzzle) {
-      showPuzzle(cachedPuzzle);
-    } else if (navigator.onLine) {
-      showPuzzle(await fetchPuzzle(randomSeed()));
-    } else {
-      throw new Error("No cached puzzles remain. Reconnect to refresh the queue.");
-    }
+    showPuzzle(await fetchPuzzle(randomSeed()));
   } catch (error) {
     showLoadError(error);
   }
-  void refillPuzzleCache();
-}
-
-async function refillPuzzleCache() {
-  if (refillingCache || !navigator.onLine) {
-    await updateCacheStatus();
-    return;
-  }
-
-  refillingCache = true;
-  const generation = refillGeneration;
-  cacheActivity = "Refreshing…";
-  await updateCacheStatus();
-  let added = 0;
-  try {
-    const records = await getCachedRecords();
-    let count = records.length;
-    const queuedSeeds = new Set(records.map((record) => record.seed));
-    if (puzzle) queuedSeeds.add(puzzle.seed);
-    while (count < CACHE_TARGET) {
-      let seed = randomSeed();
-      while (queuedSeeds.has(seed)) seed = randomSeed();
-      const cachedPuzzle = await fetchPuzzle(seed);
-      if (generation !== refillGeneration) return;
-      await storeCachedPuzzle(cachedPuzzle);
-      queuedSeeds.add(seed);
-      count += 1;
-      added += 1;
-      await updateCacheStatus();
-    }
-    if (added > 0) await setMetadata("lastUpdated", new Date().toISOString());
-    cacheActivity = added > 0 ? `Added ${added} puzzle${added === 1 ? "" : "s"}` : "Cache full";
-  } catch (error) {
-    cacheActivity = `Refresh failed: ${error.message}`;
-  } finally {
-    refillingCache = false;
-    await updateCacheStatus();
-  }
-}
-
-async function clearPuzzleCache() {
-  if (!window.confirm("Clear every cached puzzle? Your current game will remain open.")) return;
-
-  refillGeneration += 1;
-  cacheActivity = "Clearing…";
-  await updateCacheStatus();
-  try {
-    await Promise.all([clearStore(PUZZLE_STORE), clearStore(META_STORE)]);
-    cacheActivity = "Cache cleared";
-  } catch (error) {
-    cacheActivity = `Clear failed: ${error.message}`;
-  }
-  await updateCacheStatus();
-}
-
-async function updateCacheStatus() {
-  try {
-    const [records, lastUpdated] = await Promise.all([
-      getCachedRecords(),
-      getMetadata("lastUpdated"),
-    ]);
-    records.sort((left, right) => left.cachedAt.localeCompare(right.cachedAt));
-    document.querySelector("#cache-count").textContent = `${records.length} puzzles`;
-    document.querySelector("#cache-target").textContent = `${CACHE_TARGET} puzzles`;
-    document.querySelector("#cache-updated").textContent = lastUpdated
-      ? new Date(lastUpdated.value).toLocaleString()
-      : "Never";
-    document.querySelector("#cache-seeds").textContent = records.length
-      ? records.map((record) => record.seed).join(", ")
-      : "None";
-  } catch (error) {
-    document.querySelector("#cache-count").textContent = "Unavailable";
-    document.querySelector("#cache-updated").textContent = "Unavailable";
-    document.querySelector("#cache-seeds").textContent = error.message;
-  }
-  document.querySelector("#cache-connection").textContent = navigator.onLine ? "Online" : "Offline";
-  document.querySelector("#cache-current").textContent = puzzle ? `Seed ${puzzle.seed}` : "None";
-  document.querySelector("#cache-activity").textContent = cacheActivity;
-  await updatePwaStatus();
 }
 
 function isStandalone() {
   return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-}
-
-async function updatePwaStatus() {
-  document.querySelector("#pwa-worker").textContent = serviceWorkerStatus;
-  document.querySelector("#pwa-display").textContent = isStandalone() ? "Installed app" : "Browser";
-  try {
-    document.querySelector("#pwa-shell").textContent = await caches.has(APP_SHELL_CACHE)
-      ? "Cached for offline use"
-      : "Not cached yet";
-  } catch (error) {
-    document.querySelector("#pwa-shell").textContent = `Unavailable: ${error.message}`;
-  }
-}
-
-async function registerServiceWorker() {
-  if (!("serviceWorker" in navigator)) {
-    serviceWorkerStatus = "Not supported";
-    await updatePwaStatus();
-    return;
-  }
-
-  serviceWorkerStatus = "Installing…";
-  await updatePwaStatus();
-  try {
-    const registration = await navigator.serviceWorker.register("/service-worker.js");
-    await navigator.serviceWorker.ready;
-    serviceWorkerStatus = registration.active ? "Active" : "Installed";
-    registration.addEventListener("updatefound", () => {
-      serviceWorkerStatus = "Updating…";
-      void updatePwaStatus();
-    });
-  } catch (error) {
-    serviceWorkerStatus = `Failed: ${error.message}`;
-  }
-  await updatePwaStatus();
 }
 
 function enterLetter(letter) {
@@ -468,17 +268,6 @@ document.querySelector("#new-game").addEventListener("click", () => {
 hintButton.addEventListener("click", revealHint);
 document.querySelector("#info-button").addEventListener("click", () => document.querySelector("#info-dialog").showModal());
 document.querySelector("#close-info").addEventListener("click", () => document.querySelector("#info-dialog").close());
-document.querySelector("#cache-status-button").addEventListener("click", async () => {
-  await updateCacheStatus();
-  cacheDialog.showModal();
-});
-document.querySelector("#close-cache").addEventListener("click", () => cacheDialog.close());
-document.querySelector("#refresh-cache").addEventListener("click", () => {
-  void refillPuzzleCache();
-});
-document.querySelector("#clear-cache").addEventListener("click", () => {
-  void clearPuzzleCache();
-});
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
   deferredInstallPrompt = event;
@@ -487,7 +276,6 @@ window.addEventListener("beforeinstallprompt", (event) => {
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
   installButton.hidden = true;
-  void updatePwaStatus();
 });
 installButton.addEventListener("click", async () => {
   if (!deferredInstallPrompt) return;
@@ -496,21 +284,5 @@ installButton.addEventListener("click", async () => {
   deferredInstallPrompt = null;
   installButton.hidden = true;
 });
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    serviceWorkerStatus = "Active";
-    void updatePwaStatus();
-  });
-}
-window.addEventListener("online", () => {
-  cacheActivity = "Connection restored";
-  void refillPuzzleCache();
-});
-window.addEventListener("offline", () => {
-  cacheActivity = "Offline; using cached puzzles";
-  void updateCacheStatus();
-});
-
 buildKeyboard();
 void loadNextPuzzle();
-void registerServiceWorker();

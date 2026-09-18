@@ -11,7 +11,9 @@
   --correct: #538d4e;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -38,8 +40,15 @@ header {
   text-transform: uppercase;
 }
 
-h1 { margin: 3px 0 0; font-size: clamp(1.45rem, 7vw, 2rem); letter-spacing: -.04em; }
-h1 span { color: #d4bd54; }
+h1 {
+  margin: 3px 0 0;
+  font-size: clamp(1.45rem, 7vw, 2rem);
+  letter-spacing: -.04em;
+}
+
+h1 span {
+  color: #d4bd54;
+}
 
 .icon-button {
   position: absolute;
@@ -63,10 +72,22 @@ main {
   padding: 22px 10px max(12px, env(safe-area-inset-bottom));
 }
 
-#game { text-align: center; }
-.instruction { margin: 0 8px 20px; color: var(--muted); font-size: .93rem; }
+#game {
+  text-align: center;
+}
 
-.tile-row { display: flex; justify-content: center; gap: 6px; margin: 7px auto; }
+.instruction {
+  margin: 0 8px 20px;
+  color: var(--muted);
+  font-size: .93rem;
+}
+
+.tile-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 7px auto;
+}
 
 .tile {
   display: grid;
@@ -79,16 +100,48 @@ main {
   text-transform: uppercase;
 }
 
-.tile.absent { background: var(--absent); border-color: var(--absent); }
-.tile.present { background: var(--present); border-color: var(--present); }
-.tile.correct { background: var(--correct); border-color: var(--correct); }
-.tile.locked { background: var(--correct); border-color: var(--correct); }
-.tile.filled { border-color: #727274; animation: pop 90ms ease-out; }
-.tile.reveal { animation: flip 500ms ease both; }
+.tile.absent {
+  background: var(--absent);
+  border-color: var(--absent);
+}
 
-.message { min-height: 24px; margin: 18px 0 10px; font-weight: 650; }
-.message.win { color: #82c47d; }
-.message.lose { color: #e2c75b; }
+.tile.present {
+  background: var(--present);
+  border-color: var(--present);
+}
+
+.tile.correct {
+  background: var(--correct);
+  border-color: var(--correct);
+}
+
+.tile.locked {
+  background: var(--correct);
+  border-color: var(--correct);
+}
+
+.tile.filled {
+  border-color: #727274;
+  animation: pop 90ms ease-out;
+}
+
+.tile.reveal {
+  animation: flip 500ms ease both;
+}
+
+.message {
+  min-height: 24px;
+  margin: 18px 0 10px;
+  font-weight: 650;
+}
+
+.message.win {
+  color: #82c47d;
+}
+
+.message.lose {
+  color: #e2c75b;
+}
 
 .hint-button {
   min-height: 40px;
@@ -100,10 +153,23 @@ main {
   font-weight: 700;
   cursor: pointer;
 }
-.hint-button:disabled { opacity: .4; cursor: default; }
 
-.keyboard { margin-top: auto; padding-top: 12px; }
-.keyboard-row { display: flex; justify-content: center; gap: 5px; margin: 7px 0; }
+.hint-button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.keyboard {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.keyboard-row {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin: 7px 0;
+}
 
 .key {
   height: 56px;
@@ -121,16 +187,50 @@ main {
   touch-action: manipulation;
 }
 
-.key.wide { max-width: 66px; flex: 1.5; font-size: .7rem; }
-.key:active { filter: brightness(1.3); }
-.key.absent { background: var(--absent); }
-.key.present { background: var(--present); }
-.key.correct { background: var(--correct); }
+.key.wide {
+  max-width: 66px;
+  flex: 1.5;
+  font-size: .7rem;
+}
 
-.controls { margin-top: 15px; padding-top: 14px; border-top: 1px solid var(--border); }
-.controls label { display: block; margin-bottom: 7px; color: var(--muted); font-size: .78rem; font-weight: 700; text-transform: uppercase; }
-.seed-controls { display: flex; gap: 7px; }
-.seed-controls input, .seed-controls button {
+.key:active {
+  filter: brightness(1.3);
+}
+
+.key.absent {
+  background: var(--absent);
+}
+
+.key.present {
+  background: var(--present);
+}
+
+.key.correct {
+  background: var(--correct);
+}
+
+.controls {
+  margin-top: 15px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.controls label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.seed-controls {
+  display: flex;
+  gap: 7px;
+}
+
+.seed-controls input,
+.seed-controls button {
   min-height: 42px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -138,18 +238,23 @@ main {
   color: var(--text);
   font: inherit;
 }
-.seed-controls input { min-width: 0; flex: 1; padding: 0 10px; }
-.seed-controls button { padding: 0 13px; font-weight: 700; }
-.seed-controls button.primary { background: var(--correct); border-color: var(--correct); }
-.cache-status-button {
-  width: 100%;
-  min-height: 38px;
-  margin-top: 8px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-weight: 650;
+
+.seed-controls input {
+  min-width: 0;
+  flex: 1;
+  padding: 0 10px;
 }
+
+.seed-controls button {
+  padding: 0 13px;
+  font-weight: 700;
+}
+
+.seed-controls button.primary {
+  background: var(--correct);
+  border-color: var(--correct);
+}
+
 .install-button {
   width: 100%;
   min-height: 44px;
@@ -161,34 +266,115 @@ main {
   font-weight: 750;
 }
 
-.tile.win-flip { animation: win-flip 600ms ease both; }
-.tile-row.shake { animation: shake 420ms ease-in-out; }
+.tile.win-flip {
+  animation: win-flip 600ms ease both;
+}
 
-dialog { width: min(calc(100% - 32px), 430px); border: 1px solid var(--border); border-radius: 12px; background: #202022; color: var(--text); line-height: 1.5; }
-dialog::backdrop { background: rgb(0 0 0 / .72); }
-.dialog-close { float: right; border: 0; background: none; color: var(--muted); font-size: 1.8rem; }
-.cache-details { margin: 18px 0; }
-.cache-details div { display: flex; justify-content: space-between; gap: 20px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-.cache-details dt { color: var(--muted); }
-.cache-details dd { margin: 0; text-align: right; font-weight: 650; }
-.cached-seeds h3 { margin-bottom: 6px; font-size: .8rem; color: var(--muted); text-transform: uppercase; }
-.cached-seeds code { display: block; max-height: 88px; overflow: auto; overflow-wrap: anywhere; font-size: .72rem; color: #d8d8d8; }
-.dialog-action { width: 100%; min-height: 44px; margin-top: 20px; border: 0; border-radius: 6px; background: var(--correct); color: white; font-weight: 750; }
-.dialog-action.danger { margin-top: 9px; background: #9f3434; }
+.tile-row.shake {
+  animation: shake 420ms ease-in-out;
+}
 
-@keyframes pop { from { transform: scale(.88); } to { transform: scale(1); } }
-@keyframes flip { 0% { transform: rotateX(0); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+dialog {
+  width: min(calc(100% - 32px), 430px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #202022;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+dialog::backdrop {
+  background: rgb(0 0 0 / .72);
+}
+
+.dialog-close {
+  float: right;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 1.8rem;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(.88);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes flip {
+  0% {
+    transform: rotateX(0);
+  }
+
+  50% {
+    transform: rotateX(90deg);
+  }
+
+  100% {
+    transform: rotateX(0);
+  }
+}
+
 @keyframes win-flip {
-  0% { transform: rotateX(0); background: transparent; }
-  49% { transform: rotateX(90deg); background: transparent; border-color: #727274; }
-  50% { transform: rotateX(90deg); background: var(--correct); border-color: var(--correct); }
-  100% { transform: rotateX(0); background: var(--correct); border-color: var(--correct); }
-}
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  15%, 45%, 75% { transform: translateX(-7px); }
-  30%, 60%, 90% { transform: translateX(7px); }
+  0% {
+    transform: rotateX(0);
+    background: transparent;
+  }
+
+  49% {
+    transform: rotateX(90deg);
+    background: transparent;
+    border-color: #727274;
+  }
+
+  50% {
+    transform: rotateX(90deg);
+    background: var(--correct);
+    border-color: var(--correct);
+  }
+
+  100% {
+    transform: rotateX(0);
+    background: var(--correct);
+    border-color: var(--correct);
+  }
 }
 
-@media (min-width: 560px) { main { padding-top: 34px; } }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; } }
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  15%,
+  45%,
+  75% {
+    transform: translateX(-7px);
+  }
+
+  30%,
+  60%,
+  90% {
+    transform: translateX(7px);
+  }
+}
+
+@media (min-width: 560px) {
+  main {
+    padding-top: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+  }
+}

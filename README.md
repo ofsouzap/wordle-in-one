@@ -12,32 +12,13 @@ which hint is selected.
 The completion summary says `No hints used` instead of displaying the
 mechanical `Hints: 0`.
 
-## Offline puzzle queue
-
-The browser keeps fifty generated puzzles in IndexedDB. A new game consumes the
-oldest cached puzzle and refills the queue in the background while online. If
-the connection drops while the page is open, new games continue to work until
-the queue is empty. The **Offline cache status** dialog shows the connection,
-queue depth, current seed, last successful update, refresh activity, and queued
-seeds; it also provides a manual refresh button.
-The dialog also offers a confirmed cache-clear action. Clearing cancels any
-active refill and leaves the current puzzle untouched.
-
-New puzzle seeds are random eight-digit integers. Timestamps are used only for
-cache diagnostics, never as puzzle seeds.
-
 ## Progressive Web App
 
-The app is installable and supports offline startup. `manifest.webmanifest`
-defines its installed appearance and icons. The versioned service worker
-precaches the complete application shell while leaving API puzzle responses to
-the IndexedDB queue. The cache-status dialog reports service-worker, app-shell,
-and display-mode state.
-
-Whenever a cached frontend asset changes, increment `APP_CACHE` in
-`static/service-worker.js` and the matching `APP_SHELL_CACHE` in
-`static/app.js`. Installation is atomic: failure to fetch any shell asset leaves
-the preceding service worker and cache in place.
+The app is installable but requires a network connection to load the page and
+generate puzzles. `manifest.webmanifest` defines its installed appearance and
+icons, while the browser's install prompt and standalone display mode provide
+the app-like launch experience. It does not use a service worker or an
+application-managed offline cache.
 
 ## Benchmark puzzle generation
 
